@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/prices/prices",
+    "pages/history/history",
+    "pages/trends/trends"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#2d8a3e",
+    "navigationBarTitleText": "菜价通",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#8a8a8a",
+    "selectedColor": "#2d8a3e",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/prices/prices",
+        "text": "价格查询",
+        "iconPath": "images/prices.png",
+        "selectedIconPath": "images/prices-active.png"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "text": "历史对比",
+        "iconPath": "images/history.png",
+        "selectedIconPath": "images/history-active.png"
+      },
+      {
+        "pagePath": "pages/trends/trends",
+        "text": "行情趋势",
+        "iconPath": "images/trends.png",
+        "selectedIconPath": "images/trends-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
