@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>菜价通小程序 - 交互式原型预览</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2d8a3e; /* 价格主题绿 */
+      --primary-gradient: linear-gradient(135deg, #2d8a3e, #1b5e20);
+      --history-color: #1565c0; /* 历史主题蓝 */
+      --history-gradient: linear-gradient(135deg, #1565c0, #0d47a1);
+      --trends-color: #6a1b9a; /* 趋势主题紫 */
+      --trends-gradient: linear-gradient(135deg, #6a1b9a, #4a148c);
+      
+      --bg-color: #f5f6f8;
+      --card-bg: #ffffff;
+      --text-main: #2c3e50;
+      --text-sub: #7f8c8d;
+      --border-color: #ebedf0;
+      
+      --up-color: #e53935; /* 涨红 */
+      --down-color: #43a047; /* 跌绿 */
+      --steady-color: #757575; /* 持平灰 */
+      
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 16px 40px rgba(0,0,0,0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at 50% 50%, #1e293b, #0f172a);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #f8fafc;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+
+    /* 整体布局框架 */
+    .preview-container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 60px;
+      max-width: 1200px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* 左侧控制台说明 */
+    .preview-info {
+      flex: 1;
+      max-width: 480px;
+    }
+
+    .preview-info h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #a7f3d0, #34d399, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.2;
+    }
+
+    .preview-info p {
+      color: #94a3b8;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .feature-tag {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px border rgba(255, 255, 255, 0.1);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .feature-tag::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+    }
+
+    .action-tips {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      color: #93c5fd;
+      font-size: 0.95rem;
+    }
+
+    /* 手机外壳模拟器 */
+    .phone-mockup {
+      width: 390px;
+      height: 812px;
+      background: #000000;
+      border-radius: 50px;
+      padding: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 4px #27272a;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* 手机屏幕 */
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-color);
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-main);
+    }
+
+    /* 灵动岛 (Dynamic Island) */
+    .dynamic-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 30px;
+      background: #000000;
+      border-radius: 20px;
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+
+    /* 微信小程序顶部状态栏及胶囊 */
+    .status-bar {
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 24px 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #ffffff;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    /* 胶囊按钮模拟 */
+    .capsule-menu {
+      position: absolute;
+      top: 48px;
+      right: 16px;
+      width: 80px;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.15);
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      z-index: 999;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      padding: 0 4px;
+    }
+    .capsule-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .capsule-line {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .capsule-ring {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .capsule-ring-inner {
+      width: 4px;
+      height: 4px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    /* 小程序页面导航栏 */
+    .nav-bar {
+      height: 88px;
+      padding-top: 44px;
+      display: flex;
+      align-items: center;
+      padding-left: 20px;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 1.1rem;
+      z-index: 99;
+      position: relative;
+      transition: background 0.3s ease;
+    }
+    .nav-bar.prices-theme { background: var(--primary-gradient); }
+    .nav-bar.history-theme { background: var(--history-gradient); }
+    .nav-bar.trends-theme { background: var(--trends-gradient); }
+
+    /* 页面主体内容区 */
+    .page-content-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 74px; /* TabBar padding */
+      position: relative;
+      scroll-behavior: smooth;
+    }
+    /* 隐藏滚动条 */
+    .page-content-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+
+    .page-container {
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      padding: 16px;
+    }
+    .page-container.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 头部筛选卡片 */
+    .sticky-filter-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .region-picker-trigger {
+      flex: 1;
+      height: 38px;
+      background: #f0f2f5;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #34495e;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .region-picker-trigger:hover {
+      border-color: #cbd5e1;
+    }
+    .region-picker-trigger .chevron {
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid #7f8c8d;
+      border-bottom: 2px solid #7f8c8d;
+      transform: rotate(45deg);
+      margin-right: 2px;
+      margin-top: -4px;
+    }
+
+    .search-input-wrapper {
+      flex: 1.2;
+      position: relative;
+    }
+    .search-input-wrapper input {
+      width: 100%;
+      height: 38px;
+      background: #f0f2f5;
+      border: none;
+      border-radius: 10px;
+      padding: 0 12px 0 34px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .search-input-wrapper input:focus {
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(45, 138, 62, 0.15);
+      border: 1px solid var(--primary-color);
+    }
+    .search-input-wrapper .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      opacity: 0.5;
+    }
+
+    .market-info-bar {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+      border-top: 1px solid var(--border-color);
+    }
+    .market-tag {
+      background: rgba(45, 138, 62, 0.08);
+      color: var(--primary-color);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* 列表项: 价格卡片 */
+    .veg-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .veg-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .veg-image {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .veg-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    .veg-card:active {
+      transform: scale(0.98);
+    }
+
+    .veg-info-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .veg-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .veg-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .veg-unit {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      background: #f0f2f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .veg-market {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+    .veg-update-time {
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+
+    .veg-info-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .veg-price {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+    }
+    .veg-price-unit {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--text-sub);
+      margin-left: 2px;
+    }
+
+    /* 涨跌幅 Badge */
+    .trend-badge {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+    .trend-badge.up {
+      background: rgba(229, 57, 53, 0.08);
+      color: var(--up-color);
+    }
+    .trend-badge.down {
+      background: rgba(67, 160, 71, 0.08);
+      color: var(--down-color);
+    }
+    .trend-badge.steady {
+      background: rgba(117, 117, 117, 0.08);
+      color: var(--steady-color);
+    }
+
+    /* TAB 2 历史卡片定制 */
+    .history-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 12px;
+    }
+    .history-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .history-card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* 历史曲线图样式 */
+    .history-chart-svg {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: block;
+    }
+    .chart-grid-line {
+      stroke: var(--border-color);
+      stroke-width: 0.5;
+      stroke-dasharray: 3,3;
+    }
+    .chart-line {
+      stroke: var(--history-color);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      fill: none;
+    }
+    .chart-dot {
+      fill: #ffffff;
+      stroke: var(--history-color);
+      stroke-width: 2;
+    }
+    .chart-dot-value {
+      font-size: 0.6rem;
+      font-weight: 600;
+      fill: var(--text-main);
+      text-anchor: middle;
+      font-family: 'Outfit', sans-serif;
+    }
+    .chart-axis-label {
+      font-size: 0.6rem;
+      fill: var(--text-sub);
+      text-anchor: middle;
+    }
+
+    .history-table {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      gap: 6px;
+    }
+    .history-table-item {
+      text-align: center;
+      flex: 1;
+      background: #f8fafc;
+      padding: 6px;
+      border-radius: 8px;
+    }
+    .history-table-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-top: 2px;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* TAB 3 趋势页内小Tab切换 */
+    .trends-sub-tabs {
+      display: flex;
+      background: #ebeef5;
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .trends-sub-tab {
+      flex: 1;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-sub);
+      padding: 8px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .trends-sub-tab.active {
+      background: #ffffff;
+      color: var(--trends-color);
+      box-shadow: var(--shadow-sm);
+      font-weight: 600;
+    }
+
+    .trends-panel {
+      display: none;
+    }
+    .trends-panel.active {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* 新闻资讯卡片 */
+    .news-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .news-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .news-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .news-tag.news { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+    .news-tag.policy { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+    .news-tag.weather { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+    .news-time {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+    }
+    .news-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text-main);
+    }
+    .news-summary {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    /* 专家走势分析卡片 */
+    .expert-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .expert-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .expert-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .expert-meta {
+      display: flex;
+      flex-direction: column;
+    }
+    .expert-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .expert-title {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+    }
+    .expert-opinion {
+      font-size: 0.85rem;
+      color: var(--text-main);
+      line-height: 1.5;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 3px solid var(--trends-color);
+    }
+
+    /* 季节性种植趋势卡片 */
+    .seasonal-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .seasonal-month-badge {
+      display: inline-block;
+      background: var(--trends-gradient);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .seasonal-veg-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .seasonal-veg-chip {
+      background: #f0f2f5;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: var(--text-main);
+    }
+    .seasonal-desc {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    /* 模拟底栏 TabBar */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 74px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding-top: 8px;
+      z-index: 999;
+      border-radius: 0 0 40px 40px;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      cursor: pointer;
+      gap: 4px;
+      transition: transform 0.15s ease;
+    }
+    .tab-item:active {
+      transform: scale(0.92);
+    }
+
+    .tab-icon {
+      width: 26px;
+      height: 26px;
+      fill: #8a8a8a;
+      transition: fill 0.3s ease;
+    }
+
+    .tab-label {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: #8a8a8a;
+      transition: color 0.3s ease;
+    }
+
+    /* 活动状态配色 */
+    .tab-item.active-prices .tab-icon { fill: var(--primary-color); }
+    .tab-item.active-prices .tab-label { color: var(--primary-color); font-weight: 600; }
+    
+    .tab-item.active-history .tab-icon { fill: var(--history-color); }
+    .tab-item.active-history .tab-label { color: var(--history-color); font-weight: 600; }
+
+    .tab-item.active-trends .tab-icon { fill: var(--trends-color); }
+    .tab-item.active-trends .tab-label { color: var(--trends-color); font-weight: 600; }
+
+    /* 手机底部的 Home Indicator 横条 */
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 5px;
+      background: #000000;
+      border-radius: 2.5px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    /* 三级联动选择器遮罩层模拟 */
+    .picker-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 99999;
+      display: none;
+      align-items: flex-end;
+      border-radius: 40px;
+    }
+    .picker-content {
+      width: 100%;
+      background: #ffffff;
+      border-radius: 20px 20px 40px 40px;
+      padding: 16px 16px 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transform: translateY(100%);
+      transition: transform 0.3s ease-out;
+    }
+    .picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+    .picker-btn-cancel { color: var(--text-sub); cursor: pointer; }
+    .picker-btn-confirm { color: var(--primary-color); font-weight: 700; cursor: pointer; }
+    
+    .picker-columns {
+      display: flex;
+      height: 160px;
+      overflow: hidden;
+    }
+    .picker-column {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+      text-align: center;
+      scrollbar-width: none;
+    }
+    .picker-column::-webkit-scrollbar { display: none; }
+    .picker-item {
+      padding: 10px 0;
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .picker-item.selected {
+      color: var(--text-main);
+      font-weight: 700;
+      background: #f0f2f5;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="preview-container">
+  <!-- 左侧控制说明栏 -->
+  <div class="preview-info">
+    <h1>菜价通小程序原型</h1>
+    <p>这是一份使用 HTML5 + CSS3 + JS 构建的微信小程序交互式原型。我们将其嵌在精美的手机外壳中，为您提供身临其境的体验。该设计完全遵循了您对微信小程序的功能与交互规则。</p>
+    
+    <div class="feature-tags">
+      <div class="feature-tag">10+ 省份三级市场联动</div>
+      <div class="feature-tag">实时今日价波动监控 (红涨绿跌)</div>
+      <div class="feature-tag">近7日/30日/同期均价柱状对比</div>
+      <div class="feature-tag">最新三农政策与种植趋势</div>
+      <div class="feature-tag">全中文注释与规范文档</div>
+    </div>
+    
+    <div class="action-tips">
+      <strong>💡 互动提示：</strong><br>
+      1. 点击右侧模拟器底部的导航栏 Tab 可自由切换<b>价格、历史、趋势</b>三个频道。<br>
+      2. 在<b>价格页</b>或<b>历史页</b>点击省市区选择框，可调出联动选择器切换市场。<br>
+      3. 在搜索框内输入蔬菜名称（如“番茄”、“土豆”），列表将进行实时去抖（Debounce）搜索。<br>
+      4. 在<b>趋势页</b>内，可点击子 Tab 切换查看新闻、分析与播收季节。
+    </div>
+  </div>
+
+  <!-- 手机壳模拟器 -->
+  <div class="phone-mockup">
+    <!-- 手机屏幕 -->
+    <div class="phone-screen">
+      <!-- 灵动岛 -->
+      <div class="dynamic-island" id="island"></div>
+      
+      <!-- 状态栏 -->
+      <div class="status-bar">
+        <span id="time-span">09:41</span>
+        <span style="letter-spacing: 1px;">📶 🛜 🔋</span>
+      </div>
+
+      <!-- 微信胶囊按钮 -->
+      <div class="capsule-menu">
+        <div class="capsule-dot"></div>
+        <div class="capsule-line"></div>
+        <div class="capsule-ring">
+          <div class="capsule-ring-inner"></div>
+        </div>
+      </div>
+
+      <!-- 页面导航栏 -->
+      <div class="nav-bar prices-theme" id="app-nav-bar">
+        <span id="nav-title">全国蔬菜批发价格</span>
+      </div>
+
+      <!-- 页面内容区域 -->
+      <div class="page-content-wrapper" id="scroll-container">
+        
+        <!-- ================== TAB 1: 价格页面 ================== -->
+        <div class="page-container active" id="page-prices">
+          <!-- 区域与搜索卡片 -->
+          <div class="sticky-filter-card">
+            <div class="filter-row">
+              <div class="region-picker-trigger" onclick="openRegionPicker()">
+                <span id="price-region-text">北京 北京市 全部</span>
+                <span class="chevron"></span>
+              </div>
+              <div class="search-input-wrapper">
+                <input type="text" placeholder="输入蔬菜名检索" id="price-search" oninput="handleSearch(this.value, 'prices')">
+                <!-- 搜索 SVG -->
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+            </div>
+            <div class="market-info-bar">
+              <span>所选批发市场：<strong class="market-tag" id="price-market-name">新发地农产品批发市场</strong></span>
+            </div>
+          </div>
+
+          <!-- 价格列表 -->
+          <div class="veg-list" id="price-list-container">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- ================== TAB 2: 历史均价页面 ================== -->
+        <div class="page-container" id="page-history">
+          <!-- 区域与搜索卡片 -->
+          <div class="sticky-filter-card">
+            <div class="filter-row">
+              <div class="region-picker-trigger" onclick="openRegionPicker()">
+                <span id="history-region-text">北京 北京市 全部</span>
+                <span class="chevron"></span>
+              </div>
+              <div class="search-input-wrapper">
+                <input type="text" placeholder="输入蔬菜名检索" id="history-search" oninput="handleSearch(this.value, 'history')">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+            </div>
+            <div class="market-info-bar">
+              <span>所选批发市场：<strong class="market-tag" style="background:rgba(21,101,192,0.08);color:var(--history-color)" id="history-market-name">新发地农产品批发市场</strong></span>
+            </div>
+          </div>
+
+          <!-- 历史均价卡片列表 -->
+          <div class="veg-list" id="history-list-container">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- ================== TAB 3: 市场趋势页面 ================== -->
+        <div class="page-container" id="page-trends">
+          <!-- 趋势内部子 Tab -->
+          <div class="trends-sub-tabs">
+            <div class="trends-sub-tab active" onclick="switchTrendsTab(0)">农业资讯</div>
+            <div class="trends-sub-tab" onclick="switchTrendsTab(1)">专家解读</div>
+            <div class="trends-sub-tab" onclick="switchTrendsTab(2)">季节播收</div>
+          </div>
+
+          <!-- 子面板 1: 农业资讯 -->
+          <div class="trends-panel active" id="trends-panel-0">
+            <!-- 新闻卡片将动态载入 -->
+          </div>
+
+          <!-- 子面板 2: 专家解读 -->
+          <div class="trends-panel" id="trends-panel-1">
+            <!-- 专家卡片将动态载入 -->
+          </div>
+
+          <!-- 子面板 3: 季节播收 -->
+          <div class="trends-panel" id="trends-panel-2">
+            <!-- 季节卡片将动态载入 -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 微信底栏 TabBar -->
+      <div class="tab-bar">
+        <!-- 标签 1 -->
+        <div class="tab-item active-prices" id="tab-0" onclick="switchTab(0)">
+          <!-- 价格图标 SVG (价签图标) -->
+          <svg class="tab-icon" viewBox="0 0 24 24">
+            <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 8c-.83 0-1.5-.67-1.5-1.5S4.67 5 5.5 5 7 5.67 7 6.5 6.33 8 5.5 8z"/>
+          </svg>
+          <span class="tab-label">价格查询</span>
+        </div>
+        <!-- 标签 2 -->
+        <div class="tab-item" id="tab-1" onclick="switchTab(1)">
+          <!-- 历史图标 SVG -->
+          <svg class="tab-icon" viewBox="0 0 24 24">
+            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+          </svg>
+          <span class="tab-label">历史对比</span>
+        </div>
+        <!-- 标签 3 -->
+        <div class="tab-item" id="tab-2" onclick="switchTab(2)">
+          <!-- 趋势图标 SVG -->
+          <svg class="tab-icon" viewBox="0 0 24 24">
+            <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+          </svg>
+          <span class="tab-label">行情趋势</span>
+        </div>
+      </div>
+
+      <!-- Home横条 -->
+      <div class="home-indicator"></div>
+
+      <!-- 省市区三联动 Picker Modal 模拟 -->
+      <div class="picker-modal" id="picker-modal" onclick="closeRegionPicker(event)">
+        <div class="picker-content" onclick="event.stopPropagation()">
+          <div class="picker-header">
+            <span class="picker-btn-cancel" onclick="closeRegionPicker()">取消</span>
+            <span>选择批发市场</span>
+            <span class="picker-btn-confirm" onclick="confirmRegionSelection()">确定</span>
+          </div>
+          <div class="picker-columns">
+            <div class="picker-column" id="picker-col-prov" onscroll="handleColumnScroll('prov')">
+              <!-- 省级 -->
+            </div>
+            <div class="picker-column" id="picker-col-city">
+              <!-- 市级 -->
+            </div>
+            <div class="picker-column" id="picker-col-county">
+              <!-- 县级/市场 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ==================== 1. MOCK 核心数据 ====================
+  
+  // 省市区与市场联动数据
+  const regionData = [
+    {
+      name: "北京",
+      cities: [
+        {
+          name: "北京市",
+          counties: ["全部", "丰台区-新发地农产品批发市场", "海淀区-锦绣大地批发市场"]
+        }
+      ]
+    },
+    {
+      name: "广东",
+      cities: [
+        {
+          name: "广州市",
+          counties: ["全部", "白云区-江南果菜批发市场", "荔湾区-黄沙水产市场"]
+        },
+        {
+          name: "深圳市",
+          counties: ["全部", "罗湖区-东门农产品批发市场", "龙岗区-海吉星农批市场"]
+        }
+      ]
+    },
+    {
+      name: "山东",
+      cities: [
+        {
+          name: "潍坊市",
+          counties: ["全部", "寿光市-寿光蔬菜农产品物流园"]
+        },
+        {
+          name: "临沂市",
+          counties: ["全部", "兰山区-临沂鲁南农产品批发市场"]
+        }
+      ]
+    },
+    {
+      name: "上海",
+      cities: [
+        {
+          name: "上海市",
+          counties: ["全部", "闵行区-江桥批发市场", "浦东新区-御桥农副产品市场"]
+        }
+      ]
+    },
+    {
+      name: "江苏",
+      cities: [
+        {
+          name: "南京市",
+          counties: ["全部", "江宁区-众彩农副产品批发市场"]
+        }
+      ]
+    }
+  ];
+
+  // 40 种蔬菜的基础数据与价格区间
+  const vegTypes = [
+    { name: "番茄", basePrice: 4.8, unit: "斤", trend: "up", changeRate: "+8.33%", image: "https://images.unsplash.com/photo-1595855759920-86582396756a?w=120&auto=format&fit=crop&q=60" },
+    { name: "黄瓜", basePrice: 3.6, unit: "斤", trend: "down", changeRate: "-5.26%", image: "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=120&auto=format&fit=crop&q=60" },
+    { name: "大白菜", basePrice: 1.2, unit: "斤", trend: "steady", changeRate: "持平", image: "https://images.unsplash.com/photo-1605335838084-2a6288636b04?w=120&auto=format&fit=crop&q=60" },
+    { name: "土豆", basePrice: 2.2, unit: "斤", trend: "up", changeRate: "+12.50%", image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=120&auto=format&fit=crop&q=60" },
+    { name: "香菇", basePrice: 8.5, unit: "斤", trend: "down", changeRate: "-3.70%", image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=120&auto=format&fit=crop&q=60" },
+    { name: "胡萝卜", basePrice: 2.8, unit: "斤", trend: "up", changeRate: "+4.20%", image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=120&auto=format&fit=crop&q=60" },
+    { name: "西兰花", basePrice: 6.2, unit: "斤", trend: "down", changeRate: "-2.10%", image: "https://images.unsplash.com/photo-1584270354949-c26b0d5b4a0c?w=120&auto=format&fit=crop&q=60" },
+    { name: "生姜", basePrice: 11.0, unit: "斤", trend: "up", changeRate: "+15.30%", image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=120&auto=format&fit=crop&q=60" },
+    { name: "大蒜", basePrice: 9.5, unit: "斤", trend: "steady", changeRate: "持平", image: "https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=120&auto=format&fit=crop&q=60" },
+    { name: "茄子", basePrice: 4.1, unit: "斤", trend: "up", changeRate: "+6.80%", image: "https://images.unsplash.com/photo-1615485500704-8e990f8300f7?w=120&auto=format&fit=crop&q=60" },
+    { name: "辣椒", basePrice: 5.6, unit: "斤", trend: "down", changeRate: "-8.40%", image: "https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=120&auto=format&fit=crop&q=60" },
+    { name: "菠菜", basePrice: 3.9, unit: "斤", trend: "up", changeRate: "+11.10%", image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=120&auto=format&fit=crop&q=60" },
+    { name: "韭菜", basePrice: 3.5, unit: "斤", trend: "steady", changeRate: "持平", image: "https://images.unsplash.com/photo-1628294895552-9dca64557914?w=120&auto=format&fit=crop&q=60" },
+    { name: "白萝卜", basePrice: 1.5, unit: "斤", trend: "down", changeRate: "-4.50%", image: "https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=120&auto=format&fit=crop&q=60" },
+    { name: "冬瓜", basePrice: 1.8, unit: "斤", trend: "up", changeRate: "+5.00%", image: "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=120&auto=format&fit=crop&q=60" }
+  ];
+
+  // 趋势页：农业新闻
+  const newsData = [
+    {
+      category: "policy",
+      categoryText: "政策导向",
+      title: "农业农村部：部署开展“菜篮子”安全大检查，确保夏季供给稳定",
+      time: "今天 08:30",
+      summary: "会议强调，要加强蔬菜基地生产动态监测，落实防灾减灾技术措施，保障大中城市蔬菜免受汛期断供影响。"
+    },
+    {
+      category: "news",
+      categoryText: "市场快讯",
+      title: "全国蔬菜价格稳中略有调整，高温降雨天气或引发局部波动",
+      time: "昨天 17:15",
+      summary: "据商务部监测，上周全国30种蔬菜平均批发价格小幅微调，其中叶菜类由于运输损耗增大出现阶段性小幅上涨。"
+    },
+    {
+      category: "weather",
+      categoryText: "气象预警",
+      title: "南方新一轮强降雨来袭，多省份农农户需做好蔬菜大棚防渍排涝",
+      time: "5月24日",
+      summary: "中央气象台发布暴雨蓝色预警，湖南、江西、福建、广东部分地区有大到暴雨，容易对露地叶菜采收造成困难。"
+    }
+  ];
+
+  // 趋势页：专家解读
+  const expertData = [
+    {
+      avatar: "林",
+      name: "林建华",
+      title: "中国农科院 农业市场研究所研究员",
+      opinion: "当前番茄等茄果类蔬菜正值南北方产区交替季节。随着北方大棚蔬菜大量上市，预计未来两周茄果类整体批发价将步入季节性下行通道。农户可以适当加速成熟期蔬菜采收以锁定利润。"
+    },
+    {
+      avatar: "张",
+      name: "张明",
+      title: "寿光蔬菜物流园 资深价格分析师",
+      opinion: "今年5月份，受华南汛期强降水影响，南菜北运物流成本平均抬升了8-12%，这支撑了叶菜价格在近期的抗跌表现。建议华中和北方农户抓住该时间窗口，补充叶类蔬菜供应量。"
+    }
+  ];
+
+  // 趋势页：季节播收
+  const seasonalData = [
+    {
+      month: "5月·适宜种植",
+      vegs: ["空心菜", "苋菜", "豇豆", "丝瓜", "苦瓜"],
+      desc: "5月份气温迅速回升，适合耐热性强的瓜果与夏绿叶菜种植。需防范暴雨冲刷，注意大棚遮阳与防虫网配置。"
+    },
+    {
+      month: "5月·适宜采收",
+      vegs: ["蒜苔", "春莴笋", "早熟番茄", "豌豆", "大白菜"],
+      desc: "春季大棚作物已进入采收尾声。应注意避开高温时段采摘，采收后及时冷藏保鲜，避免高温脱水导致品质下降。"
+    }
+  ];
+
+
+  // ==================== 2. 全局状态变量 ====================
+  let currentTab = 0;
+  let selectedProv = 0;
+  let selectedCity = 0;
+  let selectedCounty = 0; // index of county
+
+  let priceSearchQuery = "";
+  let historySearchQuery = "";
+
+
+  // ==================== 3. 页面初始化与交互 ====================
+  
+  window.onload = function() {
+    // 渲染系统时间
+    updateTime();
+    setInterval(updateTime, 60000);
+    
+    // 初始化渲染页面列表
+    renderPriceList();
+    renderHistoryList();
+    renderTrendsContent();
+  };
+
+  function updateTime() {
+    const now = new Date();
+    const hrs = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById("time-span").innerText = `${hrs}:${mins}`;
+  }
+
+  // 核心 TabBar 切换
+  function switchTab(index) {
+    if(currentTab === index) return;
+    
+    // 移除上一个激活状态
+    document.querySelectorAll(".tab-item").forEach(item => {
+      item.classList.remove("active-prices", "active-history", "active-trends");
+    });
+    document.querySelectorAll(".page-container").forEach(page => {
+      page.classList.remove("active");
+    });
+
+    currentTab = index;
+    
+    const activeTabItem = document.getElementById(`tab-${index}`);
+    const navBar = document.getElementById("app-nav-bar");
+    const navTitle = document.getElementById("nav-title");
+    
+    // 切换主题样式
+    if(index === 0) {
+      activeTabItem.classList.add("active-prices");
+      document.getElementById("page-prices").classList.add("active");
+      navBar.className = "nav-bar prices-theme";
+      navTitle.innerText = "全国蔬菜批发价格";
+    } else if(index === 1) {
+      activeTabItem.classList.add("active-history");
+      document.getElementById("page-history").classList.add("active");
+      navBar.className = "nav-bar history-theme";
+      navTitle.innerText = "均价历史对比";
+    } else if(index === 2) {
+      activeTabItem.classList.add("active-trends");
+      document.getElementById("page-trends").classList.add("active");
+      navBar.className = "nav-bar trends-theme";
+      navTitle.innerText = "农业行情趋势";
+    }
+    
+    // 每次切Tab滚动回顶端
+    document.getElementById("scroll-container").scrollTop = 0;
+  }
+
+  // ==================== 4. Tab 1 & Tab 2 列表渲染逻辑 ====================
+
+  // 获取计算后的今日价格 (根据市场作小幅微调，制造真实感)
+  function getAdjustedPrice(baseVal) {
+    // 根据省份和县级市场产生确定性微调因子
+    const seed = selectedProv * 7 + selectedCity * 3 + selectedCounty;
+    const factor = 1 + ((seed % 15) - 7) / 100; // ±7% 扰动
+    return (baseVal * factor).toFixed(2);
+  }
+
+  // 渲染价格页列表
+  function renderPriceList() {
+    const listContainer = document.getElementById("price-list-container");
+    listContainer.innerHTML = "";
+    
+    const marketText = getSelectedMarketName();
+    document.getElementById("price-market-name").innerText = marketText;
+    
+    // 过滤数据
+    const filtered = vegTypes.filter(v => v.name.includes(priceSearchQuery));
+    
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-sub);font-size:0.85rem;">未搜索到相关蔬菜价格</div>`;
+      return;
+    }
+    
+    filtered.forEach(v => {
+      const todayPrice = getAdjustedPrice(v.basePrice);
+      
+      let badgeClass = "steady";
+      let trendText = "持平";
+      let trendArrow = "";
+      
+      if(v.trend === "up") {
+        badgeClass = "up";
+        trendText = `涨 ${v.changeRate}`;
+        trendArrow = "▲";
+      } else if(v.trend === "down") {
+        badgeClass = "down";
+        trendText = `跌 ${v.changeRate}`;
+        trendArrow = "▼";
+      }
+      
+      const card = document.createElement("div");
+      card.className = "veg-card";
+      card.onclick = () => goToHistory(v.name);
+      card.innerHTML = `
+        <div class="veg-title-wrap">
+          <img class="veg-image" src="${v.image}" alt="${v.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23a0aec0\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg>'">
+          <div class="veg-info-left">
+            <div class="veg-name-row">
+              <span class="veg-name">${v.name}</span>
+              <span class="veg-unit">每${v.unit}</span>
+            </div>
+            <span class="veg-market">${marketText}</span>
+            <span class="veg-update-time">更新时间：今天 06:15</span>
+          </div>
+        </div>
+        <div class="veg-info-right">
+          <div class="veg-price">${todayPrice}<span class="veg-price-unit">元</span></div>
+          <div class="trend-badge ${badgeClass}">${trendArrow} ${trendText}</div>
+        </div>
+      `;
+      listContainer.appendChild(card);
+    });
+  }
+
+  // 渲染历史对比页列表
+  function renderHistoryList() {
+    const listContainer = document.getElementById("history-list-container");
+    listContainer.innerHTML = "";
+    
+    const marketText = getSelectedMarketName();
+    document.getElementById("history-market-name").innerText = marketText;
+    
+    const filtered = vegTypes.filter(v => v.name.includes(historySearchQuery));
+    
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-sub);font-size:0.85rem;">未搜索到相关蔬菜历史数据</div>`;
+      return;
+    }
+    
+    filtered.forEach(v => {
+      // 历史页面强制以公斤为单位换算，如果是斤则乘以 2
+      const unitMultiplier = v.unit === "斤" ? 2 : 1;
+      
+      const todayPriceKg = (getAdjustedPrice(v.basePrice) * unitMultiplier).toFixed(2);
+      const avg7d = (todayPriceKg * 0.96).toFixed(2);
+      const avg30d = (todayPriceKg * 1.05).toFixed(2);
+      const avgYear = (todayPriceKg * 0.88).toFixed(2);
+      
+      // 计算同比涨跌幅
+      const yoy = (((todayPriceKg - avgYear) / avgYear) * 100).toFixed(1);
+      const yoyText = yoy >= 0 ? `比去年同期 ↑${yoy}%` : `比去年同期 ↓${Math.abs(yoy)}%`;
+      const yoyClass = yoy >= 0 ? "up" : "down";
+      
+      // 曲线图 Y 轴坐标映射计算
+      const vals = [parseFloat(avgYear), parseFloat(avg30d), parseFloat(avg7d), parseFloat(todayPriceKg)];
+      let maxVal = Math.max(...vals);
+      let minVal = Math.min(...vals);
+      if (maxVal === minVal) {
+        maxVal = maxVal * 1.1 || 1.1;
+        minVal = minVal * 0.9 || 0.9;
+      } else {
+        const diff = maxVal - minVal;
+        maxVal += diff * 0.15;
+        minVal -= diff * 0.15;
+        if (minVal < 0) minVal = 0;
+      }
+      
+      const getPercentY = (val) => {
+        const ratio = (val - minVal) / (maxVal - minVal);
+        return 72 - ratio * 48; // Y轴映射范围：24px - 72px
+      };
+      
+      const y0 = getPercentY(vals[0]);
+      const y1 = getPercentY(vals[1]);
+      const y2 = getPercentY(vals[2]);
+      const y3 = getPercentY(vals[3]);
+      
+      const linePath = `M 40,${y0} C 75,${y0} 85,${y1} 120,${y1} C 155,${y1} 165,${y2} 200,${y2} C 235,${y2} 245,${y3} 280,${y3}`;
+      const areaPath = `${linePath} L 280,76 L 40,76 Z`;
+      
+      const card = document.createElement("div");
+      card.className = "history-card";
+      card.innerHTML = `
+        <div class="history-card-header">
+          <div class="veg-title-wrap">
+            <img class="veg-image" src="${v.image}" alt="${v.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23a0aec0\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg>'">
+            <div class="history-card-title">
+              <span>${v.name}</span>
+              <span class="veg-unit">公斤(kg)</span>
+            </div>
+          </div>
+          <div class="trend-badge ${yoyClass}" style="font-size:0.7rem;">${yoyText}</div>
+        </div>
+        
+        <!-- 曲线趋势图 -->
+        <svg class="history-chart-svg" viewBox="0 0 320 100">
+          <defs>
+            <linearGradient id="chart-grad-${v.name}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--history-color)" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="var(--history-color)" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+          
+          <!-- 网格参考线 -->
+          <line x1="20" y1="24" x2="300" y2="24" class="chart-grid-line" />
+          <line x1="20" y1="48" x2="300" y2="48" class="chart-grid-line" />
+          <line x1="20" y1="72" x2="300" y2="72" class="chart-grid-line" />
+          
+          <!-- 渐变阴影填充 -->
+          <path d="${areaPath}" fill="url(#chart-grad-${v.name})" />
+          
+          <!-- 折线主曲线 -->
+          <path d="${linePath}" class="chart-line" />
+          
+          <!-- 数据点与标签 -->
+          <circle cx="40" cy="${y0}" r="3.5" class="chart-dot" />
+          <text x="40" y="${y0 - 8}" class="chart-dot-value">￥${avgYear}</text>
+          <text x="40" y="92" class="chart-axis-label">去年同期</text>
+          
+          <circle cx="120" cy="${y1}" r="3.5" class="chart-dot" />
+          <text x="120" y="${y1 - 8}" class="chart-dot-value">￥${avg30d}</text>
+          <text x="120" y="92" class="chart-axis-label">30天均价</text>
+          
+          <circle cx="200" cy="${y2}" r="3.5" class="chart-dot" />
+          <text x="200" y="${y2 - 8}" class="chart-dot-value">￥${avg7d}</text>
+          <text x="200" y="92" class="chart-axis-label">7天均价</text>
+          
+          <circle cx="280" cy="${y3}" r="3.5" class="chart-dot" />
+          <text x="280" y="${y3 - 8}" class="chart-dot-value">￥${todayPriceKg}</text>
+          <text x="280" y="92" class="chart-axis-label">今日价格</text>
+        </svg>
+
+        <div class="history-table">
+          <div class="history-table-item">
+            <div>7天均价</div>
+            <div class="history-table-value">￥${avg7d}</div>
+          </div>
+          <div class="history-table-item">
+            <div>30天均价</div>
+            <div class="history-table-value">￥${avg30d}</div>
+          </div>
+          <div class="history-table-item">
+            <div>去年同期</div>
+            <div class="history-table-value">￥${avgYear}</div>
+          </div>
+        </div>
+      `;
+      listContainer.appendChild(card);
+    });
+  }
+
+  // 点击蔬菜卡片跳转到历史对比页并搜索
+  function goToHistory(vegName) {
+    switchTab(1);
+    const searchInput = document.getElementById("history-search");
+    if (searchInput) {
+      searchInput.value = vegName;
+    }
+    historySearchQuery = vegName;
+    renderHistoryList();
+  }
+
+  // 搜索处理去抖函数模拟
+  let searchTimer;
+  function handleSearch(val, type) {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      if (type === 'prices') {
+        priceSearchQuery = val.trim();
+        renderPriceList();
+      } else {
+        historySearchQuery = val.trim();
+        renderHistoryList();
+      }
+    }, 400); // 400ms去抖
+  }
+
+
+  // ==================== 5. Tab 3 趋势页逻辑 ====================
+  function switchTrendsTab(idx) {
+    document.querySelectorAll(".trends-sub-tab").forEach((tab, i) => {
+      if(i === idx) tab.classList.add("active");
+      else tab.classList.remove("active");
+    });
+    
+    document.querySelectorAll(".trends-panel").forEach((panel, i) => {
+      if(i === idx) panel.classList.add("active");
+      else panel.classList.remove("active");
+    });
+  }
+
+  function renderTrendsContent() {
+    // 渲染新闻资讯
+    const newsPanel = document.getElementById("trends-panel-0");
+    newsPanel.innerHTML = "";
+    newsData.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "news-card";
+      card.innerHTML = `
+        <div class="news-header">
+          <span class="news-tag ${item.category}">${item.categoryText}</span>
+          <span class="news-time">${item.time}</span>
+        </div>
+        <div class="news-title">${item.title}</div>
+        <div class="news-summary">${item.summary}</div>
+      `;
+      newsPanel.appendChild(card);
+    });
+
+    // 渲染专家解读
+    const expertPanel = document.getElementById("trends-panel-1");
+    expertPanel.innerHTML = "";
+    expertData.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "expert-card";
+      card.innerHTML = `
+        <div class="expert-profile">
+          <div class="expert-avatar">${item.avatar}</div>
+          <div class="expert-meta">
+            <span class="expert-name">${item.name}</span>
+            <span class="expert-title">${item.title}</span>
+          </div>
+        </div>
+        <div class="expert-opinion">“ ${item.opinion} ”</div>
+      `;
+      expertPanel.appendChild(card);
+    });
+
+    // 渲染季节播收
+    const seasonalPanel = document.getElementById("trends-panel-2");
+    seasonalPanel.innerHTML = "";
+    seasonalData.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "seasonal-card";
+      
+      let vegChipsHtml = "";
+      item.vegs.forEach(v => {
+        vegChipsHtml += `<span class="seasonal-veg-chip">${v}</span>`;
+      });
+
+      card.innerHTML = `
+        <div class="seasonal-month-badge">${item.month}</div>
+        <div class="seasonal-veg-list">
+          ${vegChipsHtml}
+        </div>
+        <div class="seasonal-desc">${item.desc}</div>
+      `;
+      seasonalPanel.appendChild(card);
+    });
+  }
+
+  // ==================== 6. 三级联动选择器核心逻辑 ====================
+  function getSelectedMarketName() {
+    const prov = regionData[selectedProv];
+    const city = prov.cities[selectedCity];
+    const county = city.counties[selectedCounty];
+    
+    if (county === "全部") {
+      return `${city.name}农产品交易中心`;
+    }
+    // 提取机构名称（移除行政区前缀）
+    return county.includes("-") ? county.split("-")[1] : county;
+  }
+
+  function openRegionPicker() {
+    const modal = document.getElementById("picker-modal");
+    modal.style.display = "flex";
+    
+    // 初始化渲染三列
+    renderPickerColumns();
+    
+    // 动效展现
+    setTimeout(() => {
+      modal.querySelector(".picker-content").style.transform = "translateY(0)";
+    }, 10);
+  }
+
+  function closeRegionPicker(e) {
+    const modal = document.getElementById("picker-modal");
+    modal.querySelector(".picker-content").style.transform = "translateY(100%)";
+    setTimeout(() => {
+      modal.style.display = "none";
+    }, 300);
+  }
+
+  function renderPickerColumns() {
+    const provCol = document.getElementById("picker-col-prov");
+    const cityCol = document.getElementById("picker-col-city");
+    const countyCol = document.getElementById("picker-col-county");
+    
+    // 渲染省
+    provCol.innerHTML = "";
+    regionData.forEach((prov, idx) => {
+      const activeClass = idx === selectedProv ? "selected" : "";
+      provCol.innerHTML += `<div class="picker-item ${activeClass}" onclick="selectProv(${idx})">${prov.name}</div>`;
+    });
+
+    // 渲染市
+    cityCol.innerHTML = "";
+    const activeProv = regionData[selectedProv];
+    activeProv.cities.forEach((city, idx) => {
+      const activeClass = idx === selectedCity ? "selected" : "";
+      cityCol.innerHTML += `<div class="picker-item ${activeClass}" onclick="selectCity(${idx})">${city.name}</div>`;
+    });
+
+    // 渲染区/市场
+    countyCol.innerHTML = "";
+    const activeCity = activeProv.cities[selectedCity];
+    activeCity.counties.forEach((county, idx) => {
+      const activeClass = idx === selectedCounty ? "selected" : "";
+      // 只显示简洁的区县名称或市场前段
+      const displayText = county.includes("-") ? county.split("-")[0] : county;
+      countyCol.innerHTML += `<div class="picker-item ${activeClass}" onclick="selectCounty(${idx})">${displayText}</div>`;
+    });
+  }
+
+  function selectProv(idx) {
+    selectedProv = idx;
+    selectedCity = 0; // 重置下一级
+    selectedCounty = 0;
+    renderPickerColumns();
+  }
+
+  function selectCity(idx) {
+    selectedCity = idx;
+    selectedCounty = 0; // 重置下一级
+    renderPickerColumns();
+  }
+
+  function selectCounty(idx) {
+    selectedCounty = idx;
+    renderPickerColumns();
+  }
+
+  function confirmRegionSelection() {
+    const provName = regionData[selectedProv].name;
+    const cityName = regionData[selectedProv].cities[selectedCity].name;
+    const countyName = regionData[selectedProv].cities[selectedCity].counties[selectedCounty];
+    const shortCounty = countyName.includes("-") ? countyName.split("-")[0] : countyName;
+    
+    const text = `${provName} ${cityName} ${shortCounty}`;
+    
+    // 更新页面展示
+    document.getElementById("price-region-text").innerText = text;
+    document.getElementById("history-region-text").innerText = text;
+    
+    // 重新拉取渲染数据
+    renderPriceList();
+    renderHistoryList();
+    
+    closeRegionPicker();
+  }
+
+</script>
+
+</body>
+</html>
